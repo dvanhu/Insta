@@ -1,14 +1,18 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'nodejs'
-    }
-
     stages {
+
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/dvanhu/Insta.git'
+            }
+        }
+
+        stage('Verify Node') {
+            steps {
+                sh 'node -v'
+                sh 'npm -v'
             }
         }
 
@@ -37,7 +41,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'docker-compose up -d'
+                sh 'docker compose up -d'
             }
         }
     }
