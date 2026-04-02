@@ -38,7 +38,7 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                     sonar-scanner \
-                      -Dsonar.projectKey=Insta-project \
+                      -Dsonar.projectKey=Insta-Project \
                       -Dsonar.sources=Backend,Frontend \
                       -Dsonar.login=$SONAR_AUTH_TOKEN
                     '''
