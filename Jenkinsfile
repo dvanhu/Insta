@@ -38,7 +38,7 @@ pipeline {
                 withSonarQubeEnv('SonarQube') {
                     sh '''
                     sonar-scanner \
-                      -Dsonar.projectKey=insta-project \
+                      -Dsonar.projectKey=Insta-project \
                       -Dsonar.sources=Backend,Frontend \
                       -Dsonar.login=$SONAR_AUTH_TOKEN
                     '''
@@ -46,7 +46,6 @@ pipeline {
             }
         }
 
-        // 🚦 Quality Gate (blocks bad code)
         stage('Quality Gate') {
             steps {
                 timeout(time: 2, unit: 'MINUTES') {
