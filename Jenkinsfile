@@ -46,6 +46,7 @@ pipeline {
             }
         }
 
+        // 🚦 Quality Gate (blocks bad code)
         stage('Quality Gate') {
             steps {
                 timeout(time: 2, unit: 'MINUTES') {
