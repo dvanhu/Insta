@@ -39,8 +39,7 @@ pipeline {
                     sh '''
                     sonar-scanner \
                       -Dsonar.projectKey=insta-project \
-                      -Dsonar.sources=. \
-                      -Dsonar.host.url=http://localhost:9000 \
+                      -Dsonar.sources=Backend,Frontend \
                       -Dsonar.login=$SONAR_AUTH_TOKEN
                     '''
                 }
