@@ -21,22 +21,26 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('Frontend') {
-                    sh 'npm install'
+                    sh '''
+                    echo "===== INSTALLING DEPENDENCIES ====="
+                    pwd
+                    ls -la
+                    npm install
+                    '''
                 }
             }
         }
 
-        // ------------------ SAST ------------------
         stage('SonarQube Analysis') {
             steps {
                 dir('Frontend') {
                     withSonarQubeEnv('SonarQube') {
                         sh '''
                         sonar-scanner \
-                        -Dsonar.projectKey=insta-frontend \
-                        -Dsonar.projectName="Insta Frontend" \
-                        -Dsonar.sources=src \
-                        -Dsonar.sourceEncoding=UTF-8
+                        -Dsonar.projectKey=insta-project \
+                        -Dsonar.projectName="Insta Project" \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=http://localhost:9000
                         '''
                     }
                 }
@@ -45,13 +49,12 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
+                timeout(time: 3, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
         }
 
-        // ------------------ SCA ------------------
         stage('OWASP Dependency Check') {
             steps {
                 dir('Frontend') {
@@ -61,14 +64,12 @@ pipeline {
                     --scan . \
                     --format HTML \
                     --out dependency-check-report \
-                    --failOnCVSS 7 \
-                    --noupdate
+                    --failOnCVSS 7
                     '''
                 }
             }
         }
 
-        // ------------------ FS SCAN ------------------
         stage('Trivy Filesystem Scan') {
             steps {
                 dir('Frontend') {
@@ -82,14 +83,14 @@ pipeline {
             }
         }
 
-        // ------------------ BUILD ------------------
         stage('Docker Build') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh '''
+                docker build -t $IMAGE_NAME .
+                '''
             }
         }
 
-        // ------------------ IMAGE SCAN ------------------
         stage('Trivy Image Scan') {
             steps {
                 sh '''
@@ -101,7 +102,6 @@ pipeline {
             }
         }
 
-        // ------------------ DEPLOY ------------------
         stage('Deploy Container') {
             steps {
                 sh '''
@@ -115,14 +115,6 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: 'Frontend/dependency-check-report/**', allowEmptyArchive: true
-        }
-
-        success {
-            echo "✅ Full DevSecOps pipeline executed successfully"
-        }
-
-        failure {
-            echo "❌ Pipeline failed — check logs and vulnerabilities"
         }
     }
 }
