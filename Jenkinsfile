@@ -17,7 +17,26 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/dvanhu/Insta.git'
             }
         }
+stage('DEBUG STRUCTURE') {
+    steps {
+        sh '''
+        echo "===== CURRENT DIR ====="
+        pwd
 
+        echo "===== ROOT CONTENT ====="
+        ls -la
+
+        echo "===== TRY Insta ====="
+        ls -la Insta || echo "No Insta folder"
+
+        echo "===== TRY Frontend ====="
+        ls -la Frontend || echo "No Frontend folder"
+
+        echo "===== TRY Insta/Frontend ====="
+        ls -la Insta/Frontend || echo "No Insta/Frontend folder"
+        '''
+    }
+}
         stage('Install Dependencies') {
             steps {
                 dir('Insta/Frontend') {
