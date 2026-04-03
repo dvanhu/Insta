@@ -2,38 +2,19 @@ pipeline {
 
     agent any
 
-    // ── Options ──────────────────────────────────────────────
     options {
-        skipDefaultCheckout(true)           // manual checkout in stage 1
-        timestamps()                        // prefix every log line with time
-        timeout(time: 90, unit: 'MINUTES')  // hard ceiling — kills runaway builds
+        skipDefaultCheckout(true)
+        timestamps()
+        timeout(time: 90, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '15'))
-        disableConcurrentBuilds()           // prevent parallel runs corrupting OWASP DB
+        disableConcurrentBuilds()
     }
 
-    // ── Environment ───────────────────────────────────────────
     environment {
-        // Docker
         IMAGE_NAME       = "insta-app"
         DOCKER_CONTAINER = "insta-container"
-
-        // SonarQube
-        SONAR_PROJECT_KEY = "Insta-Project"   // exact key matching your existing SQ project
-        SONAR_HOST_URL    = "http://localhost:9000"
-
-        // OWASP Dependency Check
-        DC_BIN            = "/opt/dependency-check/bin/dependency-check.sh"
-        DC_DATA_DIR       = "/opt/dependency-check/data"
-        DC_REPORT_DIR     = "reports/dependency-check"
-
-        // Trivy
-        TRIVY_CACHE_DIR   = "${env.HOME}/.cache/trivy"
-        TRIVY_REPORT_DIR  = "reports/trivy"
     }
 
-    // ════════════════════════════════════════════════════════
-    //  STAGES
-    // ════════════════════════════════════════════════════════
     stages {
 
         // ── 1. Checkout ───────────────────────────────────────
@@ -85,7 +66,6 @@ pipeline {
         }
 
         // ── 5. Security Scans — PARALLEL ─────────────────────
-        // OWASP and Trivy FS run simultaneously — saves ~4 min per build
         stage('Security Scans') {
             parallel {
 
@@ -93,18 +73,18 @@ pipeline {
                 stage('OWASP Dependency Check') {
                     steps {
                         script {
-                            // Smart DB update logic:
-                            //   DB missing       → full download  (~3 min with API key)
-                            //   DB > 4 hours old → incremental    (~1-2 min)
-                            //   DB < 4 hours old → --noupdate     (~20 sec)
+                            // Smart DB update:
+                            //   DB < 4 hrs old  →  --noupdate  (~20 sec)
+                            //   DB > 4 hrs old  →  re-download (~60-90 min, add API key to avoid this)
+                            //   DB missing      →  fresh download
                             def dbAge = sh(
-                                script: """
-                                    if [ -f ${DC_DATA_DIR}/odc.mv.db ]; then
-                                        echo \$(( ( \$(date +%s) - \$(stat -c %Y ${DC_DATA_DIR}/odc.mv.db) ) / 3600 ))
+                                script: '''
+                                    if [ -f /opt/dependency-check/data/odc.mv.db ]; then
+                                        echo $(( ( $(date +%s) - $(stat -c %Y /opt/dependency-check/data/odc.mv.db) ) / 3600 ))
                                     else
                                         echo 999
                                     fi
-                                """,
+                                ''',
                                 returnStdout: true
                             ).trim().toInteger()
 
@@ -112,43 +92,35 @@ pipeline {
                             def updateFlag = (dbAge < 4) ? '--noupdate' : ''
                             echo "Update mode: ${updateFlag ?: 'UPDATING DB'}"
 
-                            // No API key needed — DB was downloaded in build #42.
-                            // --noupdate fires when DB < 4 hours old (~20 sec scan).
-                            // When DB is stale (> 4 hrs), incremental update runs without key
-                            // but will be slow (~60-90 min). Add the NVD API key credential
-                            // (see TODO at top of file) before that happens.
                             sh """
-                                mkdir -p ${DC_REPORT_DIR}
+                                mkdir -p reports/dependency-check
 
-                                ${DC_BIN} \
+                                /opt/dependency-check/bin/dependency-check.sh \
                                     --project "Insta" \
                                     --scan ./Frontend \
                                     --format HTML \
                                     --format JSON \
-                                    --out ${DC_REPORT_DIR} \
-                                    --data ${DC_DATA_DIR} \
+                                    --out reports/dependency-check \
+                                    --data /opt/dependency-check/data \
                                     ${updateFlag} \
                                     --failOnCVSS 7 || true
 
                                 echo "===== OWASP SCAN COMPLETE ====="
                             """
-                            // || true = report findings but don't abort pipeline.
-                            // Remove || true when you want hard failures on HIGH CVEs.
                         }
                     }
                     post {
                         always {
-                            // Adds "OWASP Dependency Check" link in Jenkins left sidebar
                             publishHTML([
                                 allowMissing: true,
                                 alwaysLinkToLastBuild: true,
                                 keepAll: true,
-                                reportDir: "${DC_REPORT_DIR}",
+                                reportDir: 'reports/dependency-check',
                                 reportFiles: 'dependency-check-report.html',
                                 reportName: 'OWASP Dependency Check'
                             ])
                             archiveArtifacts(
-                                artifacts: "${DC_REPORT_DIR}/**",
+                                artifacts: 'reports/dependency-check/**',
                                 allowEmptyArchive: true
                             )
                         }
@@ -158,28 +130,26 @@ pipeline {
                 // ── 5b. Trivy Filesystem Scan ──────────────────
                 stage('Trivy Filesystem Scan') {
                     steps {
-                        sh """
-                            mkdir -p ${TRIVY_CACHE_DIR} ${TRIVY_REPORT_DIR}
+                        sh '''
+                            mkdir -p /tmp/trivy-cache reports/trivy
 
                             trivy fs \
-                                --cache-dir ${TRIVY_CACHE_DIR} \
+                                --cache-dir /tmp/trivy-cache \
                                 --exit-code 0 \
                                 --severity HIGH,CRITICAL \
                                 --format table \
-                                --output ${TRIVY_REPORT_DIR}/trivy-fs-report.txt \
+                                --output reports/trivy/trivy-fs-report.txt \
                                 ./Frontend
 
                             echo "===== TRIVY FS SCAN COMPLETE ====="
-                            cat ${TRIVY_REPORT_DIR}/trivy-fs-report.txt
-                        """
-                        // --exit-code 0 = WARN ONLY, never fails the build.
-                        // Intentional: FS scan catches dep vulns before image build.
-                        // Change to --exit-code 1 once initial findings are triaged.
+                            cat reports/trivy/trivy-fs-report.txt
+                        '''
+                        // --exit-code 0 = warn only, never fails the build
                     }
                     post {
                         always {
                             archiveArtifacts(
-                                artifacts: "${TRIVY_REPORT_DIR}/trivy-fs-report.txt",
+                                artifacts: 'reports/trivy/trivy-fs-report.txt',
                                 allowEmptyArchive: true
                             )
                         }
@@ -190,18 +160,17 @@ pipeline {
         }
 
         // ── 6. Docker Build ───────────────────────────────────
-        // Dockerfile is at repo ROOT — not inside Frontend/
-        // This is correct for your project structure
+        // Dockerfile is at repo ROOT — correct for your project
         stage('Docker Build') {
             steps {
                 sh '''
                     echo "===== BUILDING DOCKER IMAGE ====="
                     docker build \
-                        -t ${IMAGE_NAME}:latest \
-                        -t ${IMAGE_NAME}:${BUILD_NUMBER} \
+                        -t insta-app:latest \
+                        -t insta-app:${BUILD_NUMBER} \
                         .
                     echo "===== BUILD COMPLETE ====="
-                    docker images | grep ${IMAGE_NAME}
+                    docker images | grep insta-app
                 '''
             }
         }
@@ -209,28 +178,27 @@ pipeline {
         // ── 7. Trivy Image Scan ───────────────────────────────
         stage('Trivy Image Scan') {
             steps {
-                sh """
-                    mkdir -p ${TRIVY_REPORT_DIR}
+                sh '''
+                    mkdir -p /tmp/trivy-cache reports/trivy
 
                     trivy image \
-                        --cache-dir ${TRIVY_CACHE_DIR} \
+                        --cache-dir /tmp/trivy-cache \
                         --exit-code 1 \
                         --severity CRITICAL \
                         --format table \
-                        --output ${TRIVY_REPORT_DIR}/trivy-image-report.txt \
-                        \${IMAGE_NAME}:latest || true
+                        --output reports/trivy/trivy-image-report.txt \
+                        insta-app:latest || true
 
                     echo "===== TRIVY IMAGE SCAN COMPLETE ====="
-                    cat ${TRIVY_REPORT_DIR}/trivy-image-report.txt
-                """
-                // --exit-code 1 --severity CRITICAL = hard fail on CRITICAL image CVEs.
-                // || true keeps pipeline alive so the report is always archived.
-                // Remove || true for a true hard block on CRITICAL vulnerabilities.
+                    cat reports/trivy/trivy-image-report.txt
+                '''
+                // --exit-code 1 + || true = logs CRITICAL CVEs without aborting
+                // Remove || true for a hard block on CRITICAL vulnerabilities
             }
             post {
                 always {
                     archiveArtifacts(
-                        artifacts: "${TRIVY_REPORT_DIR}/trivy-image-report.txt",
+                        artifacts: 'reports/trivy/trivy-image-report.txt',
                         allowEmptyArchive: true
                     )
                 }
@@ -242,20 +210,14 @@ pipeline {
             steps {
                 sh '''
                     echo "===== DEPLOYING CONTAINER ====="
-
-                    # Remove old container gracefully
-                    docker rm -f ${DOCKER_CONTAINER} || true
-
-                    # Start new container
+                    docker rm -f insta-container || true
                     docker run -d \
-                        --name ${DOCKER_CONTAINER} \
+                        --name insta-container \
                         --restart unless-stopped \
                         -p 3000:3000 \
-                        ${IMAGE_NAME}:latest
-
-                    # Confirm it started
+                        insta-app:latest
                     sleep 3
-                    docker ps | grep ${DOCKER_CONTAINER}
+                    docker ps | grep insta-container
                     echo "===== APP RUNNING on http://localhost:3000 ====="
                 '''
             }
@@ -267,35 +229,30 @@ pipeline {
     //  POST BUILD
     // ════════════════════════════════════════════════════════
     post {
-
         success {
             echo """
             ================================================
               BUILD #${BUILD_NUMBER} PASSED
             ================================================
-              Image   : ${IMAGE_NAME}:${BUILD_NUMBER}
+              Image   : insta-app:${BUILD_NUMBER}
               App URL : http://localhost:3000
-              Reports : Check Jenkins sidebar (OWASP, Trivy)
+              Reports : Check Jenkins sidebar and Artifacts
             ================================================
             """
         }
-
         failure {
             echo """
             ================================================
               BUILD #${BUILD_NUMBER} FAILED
             ================================================
               Check stage logs above for the failing step.
-              All reports are archived in Build Artifacts.
+              Reports are archived in Build Artifacts.
             ================================================
             """
         }
-
         always {
-            // Clean up dangling images older than 72h to save disk space
             sh 'docker image prune -f --filter "until=72h" || true'
         }
-
     }
 
 } // end pipeline
