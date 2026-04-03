@@ -1,3 +1,15 @@
+// ================================================================
+//  dvanhu/Insta — DevSecOps Pipeline  (Option B — no API key)
+//  All paths hardcoded — no env var interpolation issues
+//  --disableOssIndex  → stops rate-limit errors, saves ~46 sec
+//  --disableYarnAudit → stops yarn-not-found warnings
+//
+//  TODO later: Add NVD API key for faster DB updates
+//    Manage Jenkins → Credentials → Global → Add Credential
+//    Kind: Secret text | ID: nvd-api-key
+//    Key:  https://nvd.nist.gov/developers/request-an-api-key
+// ================================================================
+
 pipeline {
 
     agent any
@@ -135,12 +147,21 @@ pipeline {
                         sh '''
                             mkdir -p /tmp/trivy-cache reports/trivy
 
-                            trivy fs \
+                            # Check if Trivy DB already exists — skip download if so
+                            if [ -f /tmp/trivy-cache/db/trivy.db ]; then
+                                SKIP_UPDATE="--skip-db-update"
+                            else
+                                # Use ghcr.io mirror — avoids IPv6-only mirror.gcr.io
+                                SKIP_UPDATE="--db-repository ghcr.io/aquasecurity/trivy-db"
+                            fi
+
+                            TRIVY_NO_PROGRESS=true trivy fs \
                                 --cache-dir /tmp/trivy-cache \
                                 --exit-code 0 \
                                 --severity HIGH,CRITICAL \
                                 --format table \
                                 --output reports/trivy/trivy-fs-report.txt \
+                                $SKIP_UPDATE \
                                 ./Frontend
 
                             echo "===== TRIVY FS SCAN COMPLETE ====="
@@ -183,8 +204,10 @@ pipeline {
                 sh '''
                     mkdir -p /tmp/trivy-cache reports/trivy
 
-                    trivy image \
+                    # Reuse DB downloaded in FS scan — always skip re-download here
+                    TRIVY_NO_PROGRESS=true trivy image \
                         --cache-dir /tmp/trivy-cache \
+                        --skip-db-update \
                         --exit-code 1 \
                         --severity CRITICAL \
                         --format table \
@@ -194,8 +217,8 @@ pipeline {
                     echo "===== TRIVY IMAGE SCAN COMPLETE ====="
                     cat reports/trivy/trivy-image-report.txt
                 '''
+                // --skip-db-update reuses the DB from the FS scan above
                 // --exit-code 1 + || true = logs CRITICAL CVEs without aborting
-                // Remove || true for a hard block on CRITICAL vulnerabilities
             }
             post {
                 always {
