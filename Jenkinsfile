@@ -37,7 +37,7 @@ pipeline {
                     withSonarQubeEnv('SonarQube') {
                         sh '''
                         sonar-scanner \
-                        -Dsonar.projectKey=insta-project \
+                        -Dsonar.projectKey=Insta-Project \
                         -Dsonar.projectName="Insta Project" \
                         -Dsonar.sources=. \
                         -Dsonar.host.url=http://localhost:9000
