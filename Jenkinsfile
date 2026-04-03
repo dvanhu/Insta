@@ -17,37 +17,32 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/dvanhu/Insta.git'
             }
         }
-stage('DEBUG STRUCTURE') {
-    steps {
-        sh '''
-        echo "===== CURRENT DIR ====="
-        pwd
 
-        echo "===== ROOT CONTENT ====="
-        ls -la
+        stage('DEBUG STRUCTURE') {
+            steps {
+                sh '''
+                pwd
+                ls -la
+                '''
+            }
+        }
 
-        echo "===== TRY Insta ====="
-        ls -la Insta || echo "No Insta folder"
-
-        echo "===== TRY Frontend ====="
-        ls -la Frontend || echo "No Frontend folder"
-
-        echo "===== TRY Insta/Frontend ====="
-        ls -la Insta/Frontend || echo "No Insta/Frontend folder"
-        '''
-    }
-}
         stage('Install Dependencies') {
             steps {
-                dir('Insta/Frontend') {
-                    sh 'npm install'
+                dir('Frontend') {
+                    sh '''
+                    echo "===== INSIDE FRONTEND ====="
+                    pwd
+                    ls -la
+                    npm install
+                    '''
                 }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                dir('Insta/Frontend') {
+                dir('Frontend') {
                     withSonarQubeEnv('SonarQube') {
                         sh 'sonar-scanner'
                     }
@@ -65,7 +60,7 @@ stage('DEBUG STRUCTURE') {
 
         stage('OWASP Dependency Check') {
             steps {
-                dir('Insta/Frontend') {
+                dir('Frontend') {
                     sh '''
                     dependency-check.sh \
                     --project "Insta" \
@@ -80,7 +75,7 @@ stage('DEBUG STRUCTURE') {
 
         stage('Trivy Filesystem Scan') {
             steps {
-                dir('Insta/Frontend') {
+                dir('Frontend') {
                     sh '''
                     trivy fs \
                     --exit-code 1 \
@@ -120,7 +115,7 @@ stage('DEBUG STRUCTURE') {
 
     post {
         always {
-            archiveArtifacts artifacts: 'Insta/Frontend/dependency-check-report/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'Frontend/dependency-check-report/**', allowEmptyArchive: true
         }
     }
 }
