@@ -6,11 +6,6 @@ pipeline {
         DOCKER_CONTAINER = "insta-container"
     }
 
-    tools {
-        // Ensure these are configured in Jenkins Global Tool Config
-        sonarQube 'SonarQube'
-    }
-
     stages {
 
         stage('Checkout Code') {
@@ -48,7 +43,8 @@ pipeline {
                 --project "Insta" \
                 --scan . \
                 --format HTML \
-                --out dependency-check-report
+                --out dependency-check-report \
+                --failOnCVSS 7
                 '''
             }
         }
@@ -97,11 +93,11 @@ pipeline {
         }
 
         success {
-            echo "✅ Pipeline passed. Application deployed securely."
+            echo "✅ Secure deployment successful"
         }
 
         failure {
-            echo "❌ Pipeline failed due to security or quality gate violation."
+            echo "❌ Pipeline failed due to security/quality issues"
         }
     }
 }
