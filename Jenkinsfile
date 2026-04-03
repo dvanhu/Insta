@@ -1,75 +1,63 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "insta-app"
+    }
+
     stages {
 
-        stage('Clean Workspace') {
-            steps {
-                deleteDir()
-            }
-        }
-
-        
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/dvanhu/Insta.git'
+                git 'https://github.com/dvanhu/Insta.git'
             }
         }
 
-        stage('Verify Node') {
+        stage('Install Dependencies') {
             steps {
-                sh 'node -v'
-                sh 'npm -v'
+                sh 'npm install'
             }
         }
 
-        stage('Backend Build') {
+        stage('SonarQube Scan') {
             steps {
-                dir('Backend') {
-                    sh 'npm install'
-                }
+                sh 'sonar-scanner'
             }
         }
 
-        stage('Frontend Build') {
+        stage('OWASP Dependency Check') {
             steps {
-                dir('Frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
-                }
+                sh '''
+                dependency-check.sh \
+                --project "Insta" \
+                --scan . \
+                --format HTML \
+                --out dependency-check-report
+                '''
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('Trivy FS Scan') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                    sonar-scanner \
-                      -Dsonar.projectKey=Insta-Project \
-                      -Dsonar.sources=Backend,Frontend \
-                      -Dsonar.login=$SONAR_AUTH_TOKEN
-                    '''
-                }
-            }
-        }
-
-        stage('Quality Gate') {
-            steps {
-                timeout(time: 2, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
+                sh 'trivy fs --severity HIGH,CRITICAL .'
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh 'docker build -t insta-app .'
+                sh 'docker build -t $IMAGE_NAME .'
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh 'trivy image --severity HIGH,CRITICAL $IMAGE_NAME'
             }
         }
 
         stage('Deploy') {
             steps {
-                sh 'docker compose up -d'
+                sh 'docker run -d -p 3000:3000 $IMAGE_NAME'
             }
         }
     }
