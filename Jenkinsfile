@@ -112,30 +112,28 @@ pipeline {
                             def updateFlag = (dbAge < 4) ? '--noupdate' : ''
                             echo "Update mode: ${updateFlag ?: 'UPDATING DB'}"
 
-                            // Requires Jenkins credential:
-                            //   Manage Jenkins → Credentials → Global → Add Credential
-                            //   Kind: Secret text | ID: nvd-api-key
-                            //   Get key free at: https://nvd.nist.gov/developers/request-an-api-key
-                            withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_KEY')]) {
-                                sh """
-                                    mkdir -p ${DC_REPORT_DIR}
+                            // No API key needed — DB was downloaded in build #42.
+                            // --noupdate fires when DB < 4 hours old (~20 sec scan).
+                            // When DB is stale (> 4 hrs), incremental update runs without key
+                            // but will be slow (~60-90 min). Add the NVD API key credential
+                            // (see TODO at top of file) before that happens.
+                            sh """
+                                mkdir -p ${DC_REPORT_DIR}
 
-                                    ${DC_BIN} \
-                                        --project "Insta" \
-                                        --scan ./Frontend \
-                                        --format HTML \
-                                        --format JSON \
-                                        --out ${DC_REPORT_DIR} \
-                                        --data ${DC_DATA_DIR} \
-                                        --nvdApiKey \${NVD_KEY} \
-                                        ${updateFlag} \
-                                        --failOnCVSS 7 || true
+                                ${DC_BIN} \
+                                    --project "Insta" \
+                                    --scan ./Frontend \
+                                    --format HTML \
+                                    --format JSON \
+                                    --out ${DC_REPORT_DIR} \
+                                    --data ${DC_DATA_DIR} \
+                                    ${updateFlag} \
+                                    --failOnCVSS 7 || true
 
-                                    echo "===== OWASP SCAN COMPLETE ====="
-                                """
-                                // || true = report findings but don't abort pipeline.
-                                // Remove || true when you want hard failures on HIGH CVEs.
-                            }
+                                echo "===== OWASP SCAN COMPLETE ====="
+                            """
+                            // || true = report findings but don't abort pipeline.
+                            // Remove || true when you want hard failures on HIGH CVEs.
                         }
                     }
                     post {
