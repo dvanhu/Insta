@@ -43,7 +43,6 @@ pipeline {
             }
         }
 
-        // 🔥 NEW STAGE (IMPORTANT)
         stage('VERIFY TOOLS') {
             steps {
                 sh '''
@@ -56,11 +55,18 @@ pipeline {
             }
         }
 
+        // 🔥 FIXED SONAR STAGE
         stage('SonarQube Analysis') {
             steps {
                 dir('Frontend') {
                     withSonarQubeEnv('SonarQube') {
-                        sh 'sonar-scanner'
+                        sh '''
+                        sonar-scanner \
+                        -Dsonar.projectKey=insta-frontend \
+                        -Dsonar.projectName="Insta Frontend" \
+                        -Dsonar.sources=src \
+                        -Dsonar.sourceEncoding=UTF-8
+                        '''
                     }
                 }
             }
@@ -139,7 +145,7 @@ pipeline {
         }
 
         failure {
-            echo "❌ Pipeline failed — check security or config issues"
+            echo "❌ Pipeline failed — check logs"
         }
     }
 }
