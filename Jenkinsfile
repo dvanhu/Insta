@@ -20,14 +20,18 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                dir('frontend') {
+                    sh 'npm install'
+                }
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh 'sonar-scanner'
+                dir('frontend') {
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'sonar-scanner'
+                    }
                 }
             }
         }
@@ -42,25 +46,29 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                sh '''
-                dependency-check.sh \
-                --project "Insta" \
-                --scan . \
-                --format HTML \
-                --out dependency-check-report \
-                --failOnCVSS 7
-                '''
+                dir('frontend') {
+                    sh '''
+                    dependency-check.sh \
+                    --project "Insta" \
+                    --scan . \
+                    --format HTML \
+                    --out dependency-check-report \
+                    --failOnCVSS 7
+                    '''
+                }
             }
         }
 
         stage('Trivy Filesystem Scan') {
             steps {
-                sh '''
-                trivy fs \
-                --exit-code 1 \
-                --severity HIGH,CRITICAL \
-                .
-                '''
+                dir('frontend') {
+                    sh '''
+                    trivy fs \
+                    --exit-code 1 \
+                    --severity HIGH,CRITICAL \
+                    .
+                    '''
+                }
             }
         }
 
@@ -93,15 +101,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'dependency-check-report/**', allowEmptyArchive: true
-        }
-
-        success {
-            echo "✅ Secure deployment successful"
-        }
-
-        failure {
-            echo "❌ Pipeline failed due to security/quality issues"
+            archiveArtifacts artifacts: 'frontend/dependency-check-report/**', allowEmptyArchive: true
         }
     }
 }
