@@ -10,7 +10,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/dvanhu/Insta.git'
+                git branch: 'main', url: 'https://github.com/dvanhu/Insta.git'
             }
         }
 
