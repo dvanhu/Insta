@@ -3,11 +3,17 @@ pipeline {
 
     environment {
         IMAGE_NAME = "insta-app"
+        DOCKER_CONTAINER = "insta-container"
+    }
+
+    tools {
+        // Ensure these are configured in Jenkins Global Tool Config
+        sonarQube 'SonarQube'
     }
 
     stages {
 
-        stage('Checkout') {
+        stage('Checkout Code') {
             steps {
                 git 'https://github.com/dvanhu/Insta.git'
             }
@@ -19,9 +25,19 @@ pipeline {
             }
         }
 
-        stage('SonarQube Scan') {
+        stage('SonarQube Analysis') {
             steps {
-                sh 'sonar-scanner'
+                withSonarQubeEnv('SonarQube') {
+                    sh 'sonar-scanner'
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
             }
         }
 
@@ -37,9 +53,14 @@ pipeline {
             }
         }
 
-        stage('Trivy FS Scan') {
+        stage('Trivy Filesystem Scan') {
             steps {
-                sh 'trivy fs --severity HIGH,CRITICAL .'
+                sh '''
+                trivy fs \
+                --exit-code 1 \
+                --severity HIGH,CRITICAL \
+                .
+                '''
             }
         }
 
@@ -51,14 +72,36 @@ pipeline {
 
         stage('Trivy Image Scan') {
             steps {
-                sh 'trivy image --severity HIGH,CRITICAL $IMAGE_NAME'
+                sh '''
+                trivy image \
+                --exit-code 1 \
+                --severity HIGH,CRITICAL \
+                $IMAGE_NAME
+                '''
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy Container') {
             steps {
-                sh 'docker run -d -p 3000:3000 $IMAGE_NAME'
+                sh '''
+                docker rm -f $DOCKER_CONTAINER || true
+                docker run -d -p 3000:3000 --name $DOCKER_CONTAINER $IMAGE_NAME
+                '''
             }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'dependency-check-report/**', allowEmptyArchive: true
+        }
+
+        success {
+            echo "✅ Pipeline passed. Application deployed securely."
+        }
+
+        failure {
+            echo "❌ Pipeline failed due to security or quality gate violation."
         }
     }
 }
