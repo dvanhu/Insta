@@ -136,8 +136,6 @@ This project takes a **DevSecOps** approach, integrating security checks directl
 
 ---
 
----
-
 ## 📄 License
 
 This project is open source. See the repository for more details.
