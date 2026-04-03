@@ -20,7 +20,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                dir('Frontend') {
+                dir('Insta/Frontend') {
                     sh 'npm install'
                 }
             }
@@ -28,7 +28,7 @@ pipeline {
 
         stage('SonarQube Analysis') {
             steps {
-                dir('Frontend') {
+                dir('Insta/Frontend') {
                     withSonarQubeEnv('SonarQube') {
                         sh 'sonar-scanner'
                     }
@@ -46,7 +46,7 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dir('Frontend') {
+                dir('Insta/Frontend') {
                     sh '''
                     dependency-check.sh \
                     --project "Insta" \
@@ -61,7 +61,7 @@ pipeline {
 
         stage('Trivy Filesystem Scan') {
             steps {
-                dir('Frontend') {
+                dir('Insta/Frontend') {
                     sh '''
                     trivy fs \
                     --exit-code 1 \
@@ -101,7 +101,7 @@ pipeline {
 
     post {
         always {
-            archiveArtifacts artifacts: 'Frontend/dependency-check-report/**', allowEmptyArchive: true
+            archiveArtifacts artifacts: 'Insta/Frontend/dependency-check-report/**', allowEmptyArchive: true
         }
     }
 }
