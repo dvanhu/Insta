@@ -21,7 +21,10 @@ pipeline {
         stage('DEBUG STRUCTURE') {
             steps {
                 sh '''
+                echo "===== CURRENT DIR ====="
                 pwd
+
+                echo "===== ROOT CONTENT ====="
                 ls -la
                 '''
             }
@@ -37,6 +40,19 @@ pipeline {
                     npm install
                     '''
                 }
+            }
+        }
+
+        // 🔥 NEW STAGE (IMPORTANT)
+        stage('VERIFY TOOLS') {
+            steps {
+                sh '''
+                echo "===== VERIFYING DEVSECOPS TOOLS ====="
+
+                sonar-scanner --version || echo "❌ Sonar NOT installed"
+                trivy --version || echo "❌ Trivy NOT installed"
+                dependency-check.sh --version || echo "❌ OWASP NOT installed"
+                '''
             }
         }
 
@@ -116,6 +132,14 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: 'Frontend/dependency-check-report/**', allowEmptyArchive: true
+        }
+
+        success {
+            echo "✅ DevSecOps pipeline executed successfully"
+        }
+
+        failure {
+            echo "❌ Pipeline failed — check security or config issues"
         }
     }
 }
