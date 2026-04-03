@@ -1,15 +1,3 @@
-// ================================================================
-//  dvanhu/Insta — DevSecOps Pipeline  (Option B — no API key)
-//  All paths hardcoded — no env var interpolation issues
-//  --disableOssIndex  → stops rate-limit errors, saves ~46 sec
-//  --disableYarnAudit → stops yarn-not-found warnings
-//
-//  TODO later: Add NVD API key for faster DB updates
-//    Manage Jenkins → Credentials → Global → Add Credential
-//    Kind: Secret text | ID: nvd-api-key
-//    Key:  https://nvd.nist.gov/developers/request-an-api-key
-// ================================================================
-
 pipeline {
 
     agent any
