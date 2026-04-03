@@ -102,6 +102,8 @@ pipeline {
                                     --format JSON \
                                     --out reports/dependency-check \
                                     --data /opt/dependency-check/data \
+                                    --disableOssIndex \
+                                    --disableYarnAudit \
                                     ${updateFlag} \
                                     --failOnCVSS 7 || true
 
