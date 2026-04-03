@@ -8,7 +8,6 @@ pipeline {
     environment {
         IMAGE_NAME = "insta-app"
         DOCKER_CONTAINER = "insta-container"
-        NVD_API_KEY = "YOUR_API_KEY"
     }
 
     stages {
@@ -27,6 +26,7 @@ pipeline {
             }
         }
 
+        // ------------------ SAST ------------------
         stage('SonarQube Analysis') {
             steps {
                 dir('Frontend') {
@@ -51,6 +51,7 @@ pipeline {
             }
         }
 
+        // ------------------ SCA ------------------
         stage('OWASP Dependency Check') {
             steps {
                 dir('Frontend') {
@@ -61,13 +62,13 @@ pipeline {
                     --format HTML \
                     --out dependency-check-report \
                     --failOnCVSS 7 \
-                    --nvdApiKey $NVD_API_KEY \
                     --noupdate
                     '''
                 }
             }
         }
 
+        // ------------------ FS SCAN ------------------
         stage('Trivy Filesystem Scan') {
             steps {
                 dir('Frontend') {
@@ -81,12 +82,14 @@ pipeline {
             }
         }
 
+        // ------------------ BUILD ------------------
         stage('Docker Build') {
             steps {
                 sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
+        // ------------------ IMAGE SCAN ------------------
         stage('Trivy Image Scan') {
             steps {
                 sh '''
@@ -98,6 +101,7 @@ pipeline {
             }
         }
 
+        // ------------------ DEPLOY ------------------
         stage('Deploy Container') {
             steps {
                 sh '''
@@ -118,7 +122,7 @@ pipeline {
         }
 
         failure {
-            echo "❌ Pipeline failed — check security or config issues"
+            echo "❌ Pipeline failed — check logs and vulnerabilities"
         }
     }
 }
