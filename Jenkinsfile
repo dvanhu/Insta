@@ -18,44 +18,14 @@ pipeline {
             }
         }
 
-        stage('DEBUG STRUCTURE') {
-            steps {
-                sh '''
-                echo "===== CURRENT DIR ====="
-                pwd
-
-                echo "===== ROOT CONTENT ====="
-                ls -la
-                '''
-            }
-        }
-
         stage('Install Dependencies') {
             steps {
                 dir('Frontend') {
-                    sh '''
-                    echo "===== INSIDE FRONTEND ====="
-                    pwd
-                    ls -la
-                    npm install
-                    '''
+                    sh 'npm install'
                 }
             }
         }
 
-        stage('VERIFY TOOLS') {
-            steps {
-                sh '''
-                echo "===== VERIFYING DEVSECOPS TOOLS ====="
-
-                sonar-scanner --version || echo "❌ Sonar NOT installed"
-                trivy --version || echo "❌ Trivy NOT installed"
-                dependency-check.sh --version || echo "❌ OWASP NOT installed"
-                '''
-            }
-        }
-
-        // 🔥 FIXED SONAR STAGE
         stage('SonarQube Analysis') {
             steps {
                 dir('Frontend') {
@@ -84,7 +54,7 @@ pipeline {
             steps {
                 dir('Frontend') {
                     sh '''
-                    dependency-check.sh \
+                    /opt/dependency-check/bin/dependency-check.sh \
                     --project "Insta" \
                     --scan . \
                     --format HTML \
