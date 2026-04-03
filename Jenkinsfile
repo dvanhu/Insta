@@ -8,6 +8,7 @@ pipeline {
     environment {
         IMAGE_NAME = "insta-app"
         DOCKER_CONTAINER = "insta-container"
+        NVD_API_KEY = "YOUR_API_KEY"
     }
 
     stages {
@@ -59,7 +60,9 @@ pipeline {
                     --scan . \
                     --format HTML \
                     --out dependency-check-report \
-                    --failOnCVSS 7
+                    --failOnCVSS 7 \
+                    --nvdApiKey $NVD_API_KEY \
+                    --noupdate
                     '''
                 }
             }
@@ -111,11 +114,11 @@ pipeline {
         }
 
         success {
-            echo "✅ DevSecOps pipeline executed successfully"
+            echo "✅ Full DevSecOps pipeline executed successfully"
         }
 
         failure {
-            echo "❌ Pipeline failed — check logs"
+            echo "❌ Pipeline failed — check security or config issues"
         }
     }
 }
