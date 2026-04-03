@@ -135,7 +135,3 @@ This project takes a **DevSecOps** approach, integrating security checks directl
 - Each microservice uses isolated `.env` files to manage secrets — never commit these to source control
 
 ---
-
-## 📄 License
-
-This project is open source. See the repository for more details.
