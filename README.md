@@ -133,5 +133,3 @@ This project takes a **DevSecOps** approach, integrating security checks directl
 - **OWASP Dependency-Check** to detect vulnerable third-party libraries
 - **Trivy** for both filesystem and Docker image vulnerability scanning
 - Each microservice uses isolated `.env` files to manage secrets — never commit these to source control
-
----
