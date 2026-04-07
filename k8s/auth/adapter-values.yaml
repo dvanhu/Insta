@@ -1,0 +1,17 @@
+prometheus:
+  url: http://monitoring-kube-prometheus-prometheus.monitoring.svc
+
+rules:
+  default: false
+  custom:
+    - seriesQuery: '{__name__="promhttp_metric_handler_requests"}'
+      resources:
+        overrides:
+          namespace:
+            resource: namespace
+          pod:
+            resource: pod
+      name:
+        matches: "promhttp_metric_handler_requests"
+        as: "promhttp_metric_handler_requests"
+      metricsQuery: 'sum(rate(promhttp_metric_handler_requests{<<.LabelMatchers>>}[1m])) by (pod, namespace)'
