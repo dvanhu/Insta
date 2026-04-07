@@ -175,6 +175,8 @@ kubectl get hpa
 # Verify KEDA ScaledObjects
 kubectl get scaledobject
 ```
+<img width="925" height="262" alt="Screenshot from 2026-04-07 12-54-23" src="https://github.com/user-attachments/assets/af87de93-f8e8-48e6-8b8f-70a1204ef411" />
+<img width="1858" height="526" alt="Screenshot from 2026-04-07 13-00-08" src="https://github.com/user-attachments/assets/3deaf972-5af9-4a8e-9b96-dd2dec6768d4" />
 
 ---
 
@@ -226,6 +228,7 @@ Each microservice is deployed as a Kubernetes `Deployment` with the following pr
 - `service-monitor.yaml` defines a `ServiceMonitor` custom resource that instructs the Prometheus Operator to scrape the service at regular intervals
 - Metrics are integrated into the `kube-prometheus-stack` (Prometheus + Alertmanager + Grafana) for dashboards and alerting
 - `adapter-values.yaml` configures the Prometheus Adapter, which translates Prometheus query results into Kubernetes custom metrics API — making them available to both HPA and KEDA
+<img width="1920" height="573" alt="Screenshot from 2026-04-07 10-36-20" src="https://github.com/user-attachments/assets/9577db24-54a8-46f3-bb33-9bf3d6d6574c" />
 
 ### KEDA — Event-Driven Autoscaling
 
@@ -329,6 +332,7 @@ The `Jenkinsfile` defines a fully automated, security-integrated pipeline execut
 | Deploy Container | Runs the container and exposes it on port 3000 |
 
 Dependency check reports are archived as build artifacts after every pipeline run for audit and compliance purposes.
+<img width="1920" height="1080" alt="Screenshot from 2026-04-07 13-20-11" src="https://github.com/user-attachments/assets/c45b255c-4291-44c0-995d-911123f1259f" />
 
 ---
 
