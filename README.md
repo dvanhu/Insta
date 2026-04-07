@@ -315,7 +315,7 @@ The `Jenkinsfile` defines a fully automated, security-integrated pipeline execut
 | Deploy Container | Runs the container and exposes it on port 3000 |
 
 Dependency check reports are archived as build artifacts after every pipeline run for audit and compliance purposes.
-<img width="1920" height="1080" alt="Screenshot from 2026-04-07 13-20-11" src="https://github.com/user-attachments/assets/c45b255c-4291-44c0-995d-911123f1259f" />
+<img width="1487" height="305" alt="image" src="https://github.com/user-attachments/assets/9e0735e8-cadf-45f5-9594-31736b6b9ffb" />
 
 ---
 
