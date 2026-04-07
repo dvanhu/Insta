@@ -1,4 +1,13 @@
-# Insta
+# Insta 
+![CI/CD](https://img.shields.io/badge/CI%2FCD-Jenkins-D24939?style=for-the-badge&logo=jenkins&logoColor=white)
+![GitOps](https://img.shields.io/badge/GitOps-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)
+![Orchestration](https://img.shields.io/badge/Orchestration-Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
+![Containerization](https://img.shields.io/badge/Containerization-Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Code Quality](https://img.shields.io/badge/Code%20Quality-SonarQube-4E9BCD?style=for-the-badge&logo=sonarqube&logoColor=white)
+![Security](https://img.shields.io/badge/Security-OWASP-000000?style=for-the-badge&logo=owasp&logoColor=white)
+![Scanner](https://img.shields.io/badge/Scanner-Trivy-1904DA?style=for-the-badge&logo=aqua&logoColor=white)
+![Autoscaling](https://img.shields.io/badge/Autoscaling-KEDA-FF6A00?style=for-the-badge&logo=kubernetes&logoColor=white)
+![Monitoring](https://img.shields.io/badge/Monitoring-Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)
 
 A full-stack Instagram-inspired social media application built with a **microservices architecture**, containerized with Docker, and deployed through a **secure CI/CD pipeline** powered by Jenkins — with **Kubernetes-based autoscaling**, **HPA**, **KEDA event-driven scaling**, and **Prometheus monitoring** for production-grade observability and resilience.
 
