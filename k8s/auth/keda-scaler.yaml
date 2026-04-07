@@ -1,0 +1,18 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: auth-keda
+spec:
+  scaleTargetRef:
+    name: auth-service
+
+  minReplicaCount: 2
+  maxReplicaCount: 10
+
+  triggers:
+  - type: prometheus
+    metadata:
+      serverAddress: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+      metricName: http_requests_total
+      query: sum(increase(http_requests_total[1m]))
+      threshold: "1"
