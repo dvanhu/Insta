@@ -13,23 +13,6 @@ A full-stack Instagram-inspired social media application built with a **microser
 
 ---
 
-## Table of Contents
-
-- [Project Overview](#project-overview)
-- [Architecture Overview](#architecture-overview)
-- [Project Structure](#project-structure)
-- [Tech Stack](#tech-stack)
-- [Getting Started](#getting-started)
-- [Services](#services)
-- [Kubernetes Deployment & Autoscaling](#kubernetes-deployment--autoscaling)
-- [Autoscaling Workflow](#autoscaling-workflow)
-- [Load Testing](#load-testing)
-- [CI/CD Pipeline](#cicd-pipeline-jenkins)
-- [Security](#security)
-- [Resume Highlight](#resume-highlight)
-
----
-
 ## Project Overview
 
 Insta is a production-ready, cloud-native social media platform demonstrating a full DevSecOps lifecycle — from development to secure deployment to autonomous scaling. The system is designed to handle real-world traffic with:
