@@ -84,19 +84,43 @@ Insta/
 │   ├── post-service/           # Posts, likes, comments
 │   └── media-service/          # Image/video upload & storage
 ├── Frontend/                   # Client-side app (JavaScript/HTML/CSS)
-└── k8s/
-    ├── auth/                   # Auth service K8s configs
-    │   ├── adapter-values.yaml     # Prometheus adapter config
-    │   ├── deployment.yaml         # Deployment (resources + probes)
-    │   ├── hpa.yaml                # CPU-based HPA
-    │   ├── hpa-custom.yaml         # Custom metrics HPA
-    │   ├── keda-cpu.yaml           # KEDA CPU scaler
-    │   ├── keda-scaler.yaml        # KEDA Prometheus scaler
-    │   ├── service.yaml            # NodePort service
-    │   └── service-monitor.yaml    # Prometheus scraping config
-    ├── user/                   # User service K8s configs (same structure)
-    ├── post/                   # Post service K8s configs (same structure)
-    └── media/                  # Media service K8s configs (same structure)
+├── k8s/
+│   ├── auth/                   # Auth service K8s configs
+│   │   ├── adapter-values.yaml     # Prometheus adapter config
+│   │   ├── deployment.yaml         # Deployment (resources + probes)
+│   │   ├── hpa.yaml                # CPU-based HPA
+│   │   ├── hpa-custom.yaml         # Custom metrics HPA
+│   │   ├── keda-cpu.yaml           # KEDA CPU scaler
+│   │   ├── keda-scaler.yaml        # KEDA Prometheus scaler
+│   │   ├── service.yaml            # NodePort service
+│   │   └── service-monitor.yaml    # Prometheus scraping config
+│   ├── user/                   # User service K8s configs
+│   │   ├── adapter-values.yaml     # Prometheus adapter config
+│   │   ├── deployment.yaml         # Deployment (resources + probes)
+│   │   ├── hpa.yaml                # CPU-based HPA
+│   │   ├── hpa-custom.yaml         # Custom metrics HPA
+│   │   ├── keda-cpu.yaml           # KEDA CPU scaler
+│   │   ├── keda-scaler.yaml        # KEDA Prometheus scaler
+│   │   ├── service.yaml            # NodePort service
+│   │   └── service-monitor.yaml    # Prometheus scraping config
+│   ├── post/                   # Post service K8s configs
+│   │   ├── adapter-values.yaml     # Prometheus adapter config
+│   │   ├── deployment.yaml         # Deployment (resources + probes)
+│   │   ├── hpa.yaml                # CPU-based HPA
+│   │   ├── hpa-custom.yaml         # Custom metrics HPA
+│   │   ├── keda-cpu.yaml           # KEDA CPU scaler
+│   │   ├── keda-scaler.yaml        # KEDA Prometheus scaler
+│   │   ├── service.yaml            # NodePort service
+│   │   └── service-monitor.yaml    # Prometheus scraping config
+│   └── media/                  # Media service K8s configs
+│       ├── adapter-values.yaml     # Prometheus adapter config
+│       ├── deployment.yaml         # Deployment (resources + probes)
+│       ├── hpa.yaml                # CPU-based HPA
+│       ├── hpa-custom.yaml         # Custom metrics HPA
+│       ├── keda-cpu.yaml           # KEDA CPU scaler
+│       ├── keda-scaler.yaml        # KEDA Prometheus scaler
+│       ├── service.yaml            # NodePort service
+│       └── service-monitor.yaml    # Prometheus scraping config
 ├── nginx/                      # Nginx config files
 ├── nginx.conf                  # Reverse proxy routing rules
 ├── docker-compose.yml          # Multi-service orchestration
@@ -366,9 +390,3 @@ This project follows a **shift-left security** approach, embedding security cont
 - Feature work is done on dedicated branches (e.g., `k8s-auto-scaling`)
 - Rebase workflow used to maintain a clean, linear commit history
 - PR-based merge workflow ready for team collaboration
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
