@@ -95,32 +95,8 @@ Insta/
 │   │   ├── service.yaml            # NodePort service
 │   │   └── service-monitor.yaml    # Prometheus scraping config
 │   ├── user/                   # User service K8s configs
-│   │   ├── adapter-values.yaml     # Prometheus adapter config
-│   │   ├── deployment.yaml         # Deployment (resources + probes)
-│   │   ├── hpa.yaml                # CPU-based HPA
-│   │   ├── hpa-custom.yaml         # Custom metrics HPA
-│   │   ├── keda-cpu.yaml           # KEDA CPU scaler
-│   │   ├── keda-scaler.yaml        # KEDA Prometheus scaler
-│   │   ├── service.yaml            # NodePort service
-│   │   └── service-monitor.yaml    # Prometheus scraping config
 │   ├── post/                   # Post service K8s configs
-│   │   ├── adapter-values.yaml     # Prometheus adapter config
-│   │   ├── deployment.yaml         # Deployment (resources + probes)
-│   │   ├── hpa.yaml                # CPU-based HPA
-│   │   ├── hpa-custom.yaml         # Custom metrics HPA
-│   │   ├── keda-cpu.yaml           # KEDA CPU scaler
-│   │   ├── keda-scaler.yaml        # KEDA Prometheus scaler
-│   │   ├── service.yaml            # NodePort service
-│   │   └── service-monitor.yaml    # Prometheus scraping config
 │   └── media/                  # Media service K8s configs
-│       ├── adapter-values.yaml     # Prometheus adapter config
-│       ├── deployment.yaml         # Deployment (resources + probes)
-│       ├── hpa.yaml                # CPU-based HPA
-│       ├── hpa-custom.yaml         # Custom metrics HPA
-│       ├── keda-cpu.yaml           # KEDA CPU scaler
-│       ├── keda-scaler.yaml        # KEDA Prometheus scaler
-│       ├── service.yaml            # NodePort service
-│       └── service-monitor.yaml    # Prometheus scraping config
 ├── nginx/                      # Nginx config files
 ├── nginx.conf                  # Reverse proxy routing rules
 ├── docker-compose.yml          # Multi-service orchestration
