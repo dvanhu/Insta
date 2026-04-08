@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: user-service
+  labels:
+    app: user-service   # 🔥 REQUIRED
+spec:
+  selector:
+    app: user-service
+  ports:
+    - name: http        # 🔥 VERY IMPORTANT
+      port: 80
+      targetPort: 3004
+  type: NodePort
