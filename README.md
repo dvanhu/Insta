@@ -1,36 +1,38 @@
 # Insta
 
-![CI/CD](https://img.shields.io/badge/CI%2FCD-Jenkins-blue) ![GitOps](https://img.shields.io/badge/GitOps-Enabled-brightgreen) ![Orchestration](https://img.shields.io/badge/Orchestration-Kubernetes-326CE5) ![Containerization](https://img.shields.io/badge/Containerization-Docker-2496ED) ![Code Quality](https://img.shields.io/badge/Code%20Quality-SonarQube-4E9BCD) ![Security](https://img.shields.io/badge/Security-Trivy%20%7C%20OWASP-red) ![Autoscaling](https://img.shields.io/badge/Autoscaling-HPA%20%2B%20KEDA-orange) ![Monitoring](https://img.shields.io/badge/Monitoring-Prometheus-E6522C)
+![CI/CD](https://img.shields.io/badge/CI%2FCD-Jenkins-orange) ![GitOps](https://img.shields.io/badge/GitOps-Enabled-blue) ![Orchestration](https://img.shields.io/badge/Orchestration-Kubernetes-326CE5) ![Containerization](https://img.shields.io/badge/Containerization-Docker-2496ED) ![Autoscaling](https://img.shields.io/badge/Autoscaling-HPA%20%2B%20KEDA-brightgreen) ![Monitoring](https://img.shields.io/badge/Monitoring-Prometheus-E6522C) ![Security](https://img.shields.io/badge/Security-DevSecOps-red) ![Code Quality](https://img.shields.io/badge/Code%20Quality-SonarQube-4E9BCD)
 
-A full-stack Instagram-inspired social media application built with a **production-grade microservices architecture**, containerized with Docker, and deployed through a secure CI/CD pipeline powered by Jenkins — with **fully validated multi-service Kubernetes autoscaling** across all four services (HPA + KEDA), Prometheus observability, and an end-to-end DevSecOps lifecycle.
+> A full-stack Instagram-inspired social media platform built on a **production-grade microservices architecture** — containerized with Docker, deployed through a secure Jenkins CI/CD pipeline, and featuring a **fully validated multi-service Kubernetes autoscaling system** (HPA + KEDA) across all four services, backed by Prometheus observability and an end-to-end DevSecOps lifecycle.
 
 ---
 
 ## Project Overview
 
-Insta is a production-ready, cloud-native social media platform demonstrating a **complete DevSecOps lifecycle** — from development to secure deployment to autonomous scaling. What sets this project apart is its **real, validated multi-service autoscaling system** — not theoretical YAML — proven through live load testing with measurable pod scale-up results across all services.
+**Insta** is a production-ready, cloud-native social media platform demonstrating a complete DevSecOps lifecycle — from development to secure deployment to **autonomous, real-time scaling**. What distinguishes this project is its **fully implemented and load-tested multi-service autoscaling system** — not theoretical YAML — **proven through live load testing with quantified pod scale-up results** across all four microservices simultaneously.
 
-The system is engineered to handle real-world traffic with:
+The system is engineered to handle real-world traffic surges with:
 
-- **Microservices** for independent scalability and fault isolation across four domains
-- **Kubernetes** for container orchestration, pod replication, and declarative deployments
-- **Horizontal Pod Autoscaling (HPA)** — fully implemented and validated on **all four services** (auth, user, post, media)
-- **KEDA** — event-driven autoscaling prepared and integrated, ready for Prometheus-metric-driven scaling
-- **Prometheus** — metrics collection, scraping via ServiceMonitor, and custom metric exposure for HPA and KEDA
-- **Jenkins CI/CD** with integrated SAST, SCA, and image scanning at every pipeline stage
+- **Microservices** — Independent scalability and fault isolation across four service domains
+- **Kubernetes** — Container orchestration, pod replication, rolling updates, and declarative deployments
+- **Horizontal Pod Autoscaling (HPA)** — Fully implemented, load-tested, and validated across all four services (auth, user, post, media)
+- **KEDA** — Event-driven autoscaling prepared and integrated; ready for Prometheus-metric-driven scaling independent of CPU
+- **Prometheus** — Metrics collection via ServiceMonitor, custom metric exposure for both HPA and KEDA triggers
+- **Jenkins CI/CD** — Automated pipeline with integrated SAST, SCA, and image scanning at every stage
 
 ---
 
 ## What Makes This Project Production-Grade
 
-This project goes well beyond writing YAML files. Each of the points below was implemented, debugged, and validated hands-on:
+This project goes well beyond writing YAML files. Every capability below was **implemented, debugged, and validated hands-on**:
 
-- **Multi-service autoscaling** — All four microservices have independent HPA configs, verified simultaneously. This level of full-stack autoscaling validation is rare even in professional environments.
-- **Real load testing with quantified results** — Pod scale-up was observed live with `kubectl top pods` and `kubectl get pods -w`, proving the system responds to actual traffic — not synthetic configuration.
-- **Hybrid autoscaling architecture** — CPU-based HPA runs natively; KEDA is layered on top for event-driven and Prometheus-metric-driven scaling, giving the system two independent, complementary scaling paths.
-- **Production-like debugging** — Real-world issues including ImagePullBackOff, port mismatches, probe failures, and DNS resolution errors were encountered, diagnosed, and resolved — exactly the class of issues that arise in production Kubernetes environments.
-- **Observability via Prometheus** — Each service exposes `/metrics`, and ServiceMonitor resources enable automatic scraping, feeding dashboards and KEDA triggers.
-- **DevSecOps pipeline** — Security is not bolted on at the end; SAST, SCA, and image scanning are gated into every CI/CD run.
+| Capability | Why It Matters |
+|---|---|
+| **Multi-service autoscaling** | All four microservices have independent, simultaneously validated HPA configs — rare even in professional environments |
+| **Real load testing with quantified results** | Pod scale-up observed live with `kubectl top pods` and `kubectl get pods -w` — real traffic, not synthetic config |
+| **Hybrid autoscaling architecture** | CPU-based HPA natively + KEDA for event/Prometheus-driven scaling — two independent, complementary scaling paths |
+| **Production-like debugging** | ImagePullBackOff, port mismatches, probe failures, DNS errors — real issues encountered, diagnosed, and resolved |
+| **Observability via Prometheus** | Each service exposes `/metrics`; ServiceMonitor automates scraping; feeds KEDA triggers and Grafana dashboards |
+| **DevSecOps pipeline** | Security gated into every CI/CD run — SAST, SCA, and dual-layer image scanning before any deployment |
 
 ---
 
@@ -45,16 +47,14 @@ Traffic enters through Nginx as an API gateway and is routed to the appropriate 
                         │      Nginx      │  :80
                         │  (API Gateway)  │
                         └────────┬────────┘
-               ┌─────────────────┼─────────────────┐
+               ┌─────────────────┼─────────────────┬─────────────────┐
                ▼                 ▼                 ▼                 ▼
         ┌────────────┐   ┌────────────┐   ┌────────────┐   ┌─────────────┐
         │auth-service│   │user-service│   │post-service│   │media-service│
         └────────────┘   └────────────┘   └────────────┘   └─────────────┘
 ```
 
-### Kubernetes Layer
-
-The Kubernetes layer sits between the API gateway and the microservices, providing service discovery, pod replication, and **multi-service autoscaling**:
+### Kubernetes Autoscaling Layer
 
 ```
 User → Nginx → Kubernetes Service → Pods (Microservices)
@@ -68,9 +68,9 @@ User → Nginx → Kubernetes Service → Pods (Microservices)
                                      Prometheus
 ```
 
-- **Service-based routing** — Kubernetes Services expose each microservice internally via NodePort, abstracting pod IP changes
+- **Service-based routing** — Kubernetes Services expose each microservice via NodePort, abstracting pod IP churn
 - **Pod replication** — Each deployment maintains a configurable replica count with rolling update support
-- **Autoscaling** — HPA scales pods based on CPU utilization across all four services; KEDA extends this with Prometheus-based custom metrics (e.g., HTTP request rate)
+- **Dual-path autoscaling** — HPA scales pods on CPU; KEDA extends this with Prometheus custom metrics (e.g., HTTP request rate), giving the system two independent scaling mechanisms
 
 ---
 
@@ -94,12 +94,12 @@ Insta/
 │   │   ├── keda-scaler.yaml        # KEDA Prometheus scaler
 │   │   ├── service.yaml            # NodePort service
 │   │   └── service-monitor.yaml    # Prometheus scraping config
-│   ├── user/                   # User service K8s configs
-│   ├── post/                   # Post service K8s configs
-│   └── media/                  # Media service K8s configs
+│   ├── user/                   # User service K8s configs (same structure)
+│   ├── post/                   # Post service K8s configs (same structure)
+│   └── media/                  # Media service K8s configs (same structure)
 ├── nginx/                      # Nginx config files
 ├── nginx.conf                  # Reverse proxy routing rules
-├── docker-compose.yml          # Multi-service orchestration
+├── docker-compose.yml          # Multi-service local orchestration
 ├── Dockerfile                  # App container definition
 ├── Jenkinsfile                 # CI/CD pipeline definition
 └── sonar-project.properties    # SonarQube config
@@ -115,10 +115,10 @@ Insta/
 | Backend | Node.js (microservices) | Business logic per domain |
 | Reverse Proxy | Nginx | API gateway & traffic routing |
 | Containerization | Docker & Docker Compose | Service packaging & local orchestration |
-| Orchestration | Kubernetes | Container scheduling, replication, service discovery |
-| Autoscaling (CPU) | HPA | Scale pods based on CPU utilization — validated across all 4 services |
-| Autoscaling (Events) | KEDA | Scale pods based on Prometheus metrics — prepared & integrated |
-| Monitoring | Prometheus | Metrics collection, scraping, alerting |
+| Orchestration | Kubernetes | Scheduling, replication, service discovery |
+| Autoscaling (CPU) | HPA | Scale pods on CPU utilization — validated across all 4 services |
+| Autoscaling (Events) | KEDA | Scale pods on Prometheus metrics — prepared & integrated |
+| Monitoring | Prometheus + Grafana | Metrics collection, dashboards, alerting |
 | CI/CD | Jenkins | Automated build, test, scan, and deploy pipeline |
 | Code Quality | SonarQube | Static analysis & quality gates |
 | Security Scanning | OWASP Dependency-Check, Trivy | Vulnerability detection at source & image level |
@@ -132,7 +132,7 @@ Insta/
 - Docker and Docker Compose installed
 - Node.js (for local development)
 - `kubectl` configured against a running cluster
-- Helm (for kube-prometheus-stack installation)
+- Helm (for `kube-prometheus-stack` installation)
 
 ### Run Locally with Docker Compose
 
@@ -176,23 +176,23 @@ kubectl get scaledobject
 
 ## Multi-Service Autoscaling (Validated)
 
-> **This is not a conceptual setup. Autoscaling has been fully implemented, load-tested, and verified across all four microservices.**
+> This is not a conceptual setup. Autoscaling has been **fully implemented, load-tested, and verified across all four microservices** — simultaneously.
 
 ### What's Implemented Per Service
 
-Each of the four services (`auth`, `user`, `post`, `media`) has a complete, independent autoscaling stack:
+Each of the four services (auth, user, post, media) has a complete, independent autoscaling stack:
 
 | Config File | Purpose |
 |---|---|
 | `deployment.yaml` | Pod spec with resource requests/limits and health probes |
-| `service.yaml` | NodePort service with correct `containerPort` → `targetPort` mapping |
+| `service.yaml` | NodePort service with correct `containerPort → targetPort` mapping |
 | `hpa.yaml` | CPU-based Horizontal Pod Autoscaler |
 | `keda-scaler.yaml` | KEDA Prometheus-based scaler (event-driven) |
 | `keda-cpu.yaml` | KEDA CPU scaler (alternative to native HPA) |
 | `service-monitor.yaml` | Prometheus ServiceMonitor for automatic scraping |
 | `hpa-custom.yaml` | Custom metrics HPA via Prometheus Adapter |
 
-### HPA Configuration (Per Service)
+### HPA Configuration (All Services)
 
 | Parameter | Value |
 |---|---|
@@ -203,16 +203,16 @@ Each of the four services (`auth`, `user`, `post`, `media`) has a complete, inde
 
 ### Real Load Testing Results
 
-Load testing was performed using a lightweight **BusyBox pod** generating continuous HTTP traffic against each service. Results were observed live with `kubectl top pods` and `kubectl get pods -w`:
+Load testing was performed using a lightweight BusyBox pod generating continuous HTTP traffic against each service. Results were observed live with `kubectl top pods` and `kubectl get pods -w`:
 
-| Service | Max Pods Reached | Behavior |
+| Service | Max Pods Reached | Observed Behavior |
 |---|---|---|
-| user-service | ~6 pods | Scaled up steadily under sustained traffic |
-| post-service | ~10 pods | Hit maximum threshold; HPA held at ceiling |
-| media-service | Dynamic | Scaled responsively based on upload load |
-| auth-service | Stable | Low traffic during test; remained at minimum |
+| `user-service` | ~6 pods | Scaled up steadily under sustained traffic |
+| `post-service` | ~10 pods | Hit maximum threshold; HPA correctly held at ceiling |
+| `media-service` | Dynamic | Scaled responsively based on upload load |
+| `auth-service` | Stable | Low traffic during test; remained at configured minimum |
 
-**These results confirm autoscaling is functional, responsive, and correctly bounded by configured min/max thresholds.**
+> These results confirm autoscaling is functional, responsive, and correctly bounded by configured `minReplicas`/`maxReplicas` thresholds.
 
 ### Running a Load Test
 
@@ -233,24 +233,21 @@ Open a second terminal while the load test runs:
 # Watch HPA scale in real time across all services
 kubectl get hpa --watch
 
-# Watch pod count change
+# Watch pod count change dynamically
 kubectl get pods --watch
 
 # Check live CPU usage per pod
 kubectl top pods
 
-# Check KEDA ScaledObject status
+# Inspect KEDA ScaledObject status
 kubectl describe scaledobject auth-keda-scaler
 ```
 
----
+### Autoscaling Workflow
 
-## Autoscaling Workflow
-
-Two independent autoscaling paths operate in parallel and complement each other:
+Two independent autoscaling paths operate in parallel:
 
 **Path 1 — CPU-Based (HPA):**
-
 ```
 Traffic Increase
       │
@@ -268,7 +265,6 @@ Pods scaled up (max: 10 per service)
 ```
 
 **Path 2 — Prometheus-Based (KEDA):**
-
 ```
 Traffic Increase
       │
@@ -285,7 +281,7 @@ KEDA triggers scale-up event
 Pods scaled based on request rate metric
 ```
 
-Both paths respect the deployment's configured `minReplicas` and `maxReplicas` bounds, preventing runaway scaling. KEDA can also scale deployments **to zero** during inactivity, reducing infrastructure cost in non-production environments.
+Both paths respect the deployment's configured `minReplicas` and `maxReplicas` bounds. KEDA can also scale deployments **to zero** during inactivity, reducing infrastructure cost in non-production environments.
 
 ---
 
@@ -310,13 +306,13 @@ Acts as a reverse proxy, routing incoming requests to the appropriate microservi
 
 ## Kubernetes Deployment Configuration
 
-Each microservice is deployed as a Kubernetes `Deployment` with the following production configurations:
+Each microservice is deployed with the following production-grade configurations:
 
 - **Replicas** — Minimum replica count declared in `deployment.yaml`, ensuring availability from the start
 - **Resource limits** — CPU and memory requests/limits defined to enable accurate scheduling and HPA decision-making
 - **Liveness probe** — Kubernetes automatically restarts pods that fail health checks at `/health`
-- **Readiness probe** — Traffic is only routed to pods that have passed readiness checks, preventing requests from hitting unready instances
-- **Service exposure** — `service.yaml` exposes each deployment via a NodePort Kubernetes Service, providing stable internal DNS resolution regardless of pod churn
+- **Readiness probe** — Traffic only routes to pods that have passed readiness checks, preventing requests from hitting unready instances
+- **Service exposure** — `service.yaml` exposes each deployment via NodePort, providing stable internal DNS regardless of pod churn
 
 ---
 
@@ -325,7 +321,7 @@ Each microservice is deployed as a Kubernetes `Deployment` with the following pr
 - Each service exposes runtime metrics at `/metrics` in Prometheus exposition format
 - `service-monitor.yaml` defines a `ServiceMonitor` custom resource that instructs the Prometheus Operator to scrape each service at regular intervals
 - Metrics are integrated into the `kube-prometheus-stack` (Prometheus + Alertmanager + Grafana) for dashboards and alerting
-- `adapter-values.yaml` configures the Prometheus Adapter, which translates Prometheus query results into Kubernetes custom metrics — making them available to both HPA and KEDA
+- `adapter-values.yaml` configures the Prometheus Adapter, translating Prometheus query results into Kubernetes custom metrics — available to both HPA and KEDA
 
 ---
 
@@ -344,8 +340,13 @@ The `Jenkinsfile` defines a fully automated, security-integrated pipeline execut
 | Docker Build | Builds the application Docker image |
 | Trivy Image Scan | Scans the final Docker image for HIGH and CRITICAL vulnerabilities |
 | Deploy Container | Runs the container and exposes it on port 3000 |
+<img width="1494" height="500" alt="image" src="https://github.com/user-attachments/assets/dc370604-7dbd-45ff-88b0-ec1703766963" />
 
 Dependency check reports are archived as build artifacts after every pipeline run for audit and compliance purposes.
+
+### Git Workflow
+
+Work is done on the `k8s-auto-scaling` feature branch, using a **rebase workflow** to maintain a clean, linear commit history. All changes are introduced through pull requests — matching the GitOps workflows used in production engineering teams.
 
 ---
 
