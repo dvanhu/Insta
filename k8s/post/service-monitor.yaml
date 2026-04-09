@@ -3,15 +3,18 @@ kind: ServiceMonitor
 metadata:
   name: post-service-monitor
   labels:
-    release: kube-prometheus-stack
+    release: monitoring
+
 spec:
   selector:
     matchLabels:
       app: post-service
+
   namespaceSelector:
     matchNames:
       - default
+
   endpoints:
   - port: http
     path: /metrics
-    interval: 10s
+    interval: 15s
