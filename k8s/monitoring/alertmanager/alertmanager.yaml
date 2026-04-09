@@ -1,0 +1,15 @@
+global:
+  smtp_smarthost: 'smtp.gmail.com:587'
+  smtp_from: 'divanshu0213@gmail.com'
+  smtp_auth_username: 'divanshu0213@gmail.com'
+  smtp_auth_password: 'APP_PASSWORD'
+  smtp_require_tls: true
+
+route:
+  receiver: email-notifications
+
+receivers:
+- name: email-notifications
+  email_configs:
+  - to: 'divanshu0213@gmail.com'
+    send_resolved: true

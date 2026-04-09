@@ -1,0 +1,9 @@
+grafana:
+  adminPassword: admin123
+
+alertmanager:
+  enabled: true
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false

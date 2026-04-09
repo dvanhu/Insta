@@ -47,3 +47,7 @@ Thumbs.db
 # =========================
 coverage/
 .cache/
+*.env
+*.log
+node_modules/
+alertmanager.yaml.local
