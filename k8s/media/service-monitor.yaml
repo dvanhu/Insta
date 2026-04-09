@@ -1,17 +1,15 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: auth-service-monitor
+  name: media-service-monitor
   labels:
-    release: kube-prometheus-stack
+    release: monitoring   # VERY IMPORTANT (matches Prometheus)
 spec:
   selector:
     matchLabels:
-      app: auth-service
-  namespaceSelector:
-    matchNames:
-      - default
+      app: media-service   # MUST match service labels
+
   endpoints:
-  - port: http
-    path: /metrics
-    interval: 10s
+    - port: http           # MUST match service port name
+      path: /metrics
+      interval: 10s
