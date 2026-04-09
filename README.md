@@ -15,7 +15,7 @@ The system is engineered to handle real-world traffic surges with:
 - **Microservices** — Independent scalability and fault isolation across four service domains
 - **Kubernetes** — Container orchestration, pod replication, rolling updates, and declarative deployments
 - **Horizontal Pod Autoscaling (HPA)** — Fully implemented, load-tested, and validated across all four services (auth, user, post, media)
-- **KEDA** — Event-driven autoscaling prepared and integrated; ready for Prometheus-metric-driven scaling independent of CPU
+- **KEDA** — Event-driven autoscaling integrated with Prometheus; scales pods based on real-time HTTP request rate independent of CPU
 - **Prometheus** — Metrics collection via ServiceMonitor, custom metric exposure for both HPA and KEDA triggers
 - **Jenkins CI/CD** — Automated pipeline with integrated SAST, SCA, and image scanning at every stage
 
@@ -30,7 +30,7 @@ This project goes well beyond writing YAML files. Every capability below was **i
 | **Multi-service autoscaling** | All four microservices have independent, simultaneously validated HPA configs — rare even in professional environments |
 | **Real load testing with quantified results** | Pod scale-up observed live with `kubectl top pods` and `kubectl get pods -w` — real traffic, not synthetic config |
 | **Hybrid autoscaling architecture** | CPU-based HPA natively + KEDA for event/Prometheus-driven scaling — two independent, complementary scaling paths |
-| **Production-like debugging** | ImagePullBackOff, port mismatches, probe failures, DNS errors — real issues encountered, diagnosed, and resolved |
+| **Production-like debugging** | ImagePullBackOff, port mismatches, probe failures, DNS errors, ServiceMonitor label mismatches — real issues encountered, diagnosed, and resolved |
 | **Observability via Prometheus** | Each service exposes `/metrics`; ServiceMonitor automates scraping; feeds KEDA triggers and Grafana dashboards |
 | **DevSecOps pipeline** | Security gated into every CI/CD run — SAST, SCA, and dual-layer image scanning before any deployment |
 
@@ -86,14 +86,14 @@ Insta/
 ├── Frontend/                   # Client-side app (JavaScript/HTML/CSS)
 ├── k8s/
 │   ├── auth/                   # Auth service K8s configs
-│   │   ├── adapter-values.yaml     # Prometheus adapter config
 │   │   ├── deployment.yaml         # Deployment (resources + probes)
+│   │   ├── service.yaml            # NodePort service
+│   │   ├── service-monitor.yaml    # Prometheus scraping config
 │   │   ├── hpa.yaml                # CPU-based HPA
 │   │   ├── hpa-custom.yaml         # Custom metrics HPA
-│   │   ├── keda-cpu.yaml           # KEDA CPU scaler
-│   │   ├── keda-scaler.yaml        # KEDA Prometheus scaler
-│   │   ├── service.yaml            # NodePort service
-│   │   └── service-monitor.yaml    # Prometheus scraping config
+│   │   ├── adapter-values.yaml     # Prometheus adapter config
+│   │   └── keda/
+│   │       └── scaledobject.yaml   # KEDA Prometheus ScaledObject
 │   ├── user/                   # User service K8s configs (same structure)
 │   ├── post/                   # Post service K8s configs (same structure)
 │   └── media/                  # Media service K8s configs (same structure)
@@ -117,7 +117,8 @@ Insta/
 | Containerization | Docker & Docker Compose | Service packaging & local orchestration |
 | Orchestration | Kubernetes | Scheduling, replication, service discovery |
 | Autoscaling (CPU) | HPA | Scale pods on CPU utilization — validated across all 4 services |
-| Autoscaling (Events) | KEDA | Scale pods on Prometheus metrics — prepared & integrated |
+| Autoscaling (Events) | KEDA | Scale pods on Prometheus RPS metrics — fully integrated |
+| Custom Metrics | prom-client (Node.js) | Per-service HTTP request counters exposed at `/metrics` |
 | Monitoring | Prometheus + Grafana | Metrics collection, dashboards, alerting |
 | CI/CD | Jenkins | Automated build, test, scan, and deploy pipeline |
 | Code Quality | SonarQube | Static analysis & quality gates |
@@ -187,8 +188,7 @@ Each of the four services (auth, user, post, media) has a complete, independent 
 | `deployment.yaml` | Pod spec with resource requests/limits and health probes |
 | `service.yaml` | NodePort service with correct `containerPort → targetPort` mapping |
 | `hpa.yaml` | CPU-based Horizontal Pod Autoscaler |
-| `keda-scaler.yaml` | KEDA Prometheus-based scaler (event-driven) |
-| `keda-cpu.yaml` | KEDA CPU scaler (alternative to native HPA) |
+| `keda/scaledobject.yaml` | KEDA Prometheus-based scaler (event-driven, per-service RPS) |
 | `service-monitor.yaml` | Prometheus ServiceMonitor for automatic scraping |
 | `hpa-custom.yaml` | Custom metrics HPA via Prometheus Adapter |
 
@@ -269,19 +269,111 @@ Pods scaled up (max: 10 per service)
 Traffic Increase
       │
       ▼
-Request rate captured in Prometheus
+/metrics endpoint increments http_requests_total
+      │
+      ▼
+Prometheus scrapes metric via ServiceMonitor
       │
       ▼
 KEDA queries Prometheus via ScaledObject
       │
       ▼
-KEDA triggers scale-up event
-      │
-      ▼
-Pods scaled based on request rate metric
+Pods scaled based on real-time RPS threshold
 ```
 
 Both paths respect the deployment's configured `minReplicas` and `maxReplicas` bounds. KEDA can also scale deployments **to zero** during inactivity, reducing infrastructure cost in non-production environments.
+
+---
+
+## Event-Driven Autoscaling with KEDA
+
+> CPU-based HPA reacts to *symptoms*. KEDA reacts to *causes*.
+
+### Why CPU-Based HPA Falls Short
+
+CPU utilization is a lagging indicator — by the time pods are stressed enough to cross the scaling threshold, users are already experiencing latency. CPU spikes also occur for reasons unrelated to traffic (garbage collection, background jobs), triggering unnecessary scale-ups. For a request-driven system, **request rate is a far more accurate and proactive scaling signal**.
+
+### KEDA Integration Flow
+
+```
+Service → /metrics → Prometheus → KEDA ScaledObject → HPA → Pods
+```
+
+KEDA reads a PromQL query, evaluates the result against a configured threshold, and dynamically manages an HPA object — no manual HPA tuning required. Each service has its own dedicated ScaledObject:
+
+```
+k8s/<service>/keda/scaledobject.yaml
+```
+
+### Prometheus Trigger Query (Per Service)
+
+```promql
+sum(rate(http_requests_total{service="media-service"}[1m]))
+```
+
+This computes the real-time requests-per-second rate for a specific service over a 1-minute rolling window and feeds it directly into KEDA's scaling decision. The `service` label isolates the metric to a single microservice, enabling fully independent scaling per service.
+
+### Threshold-Based Scaling Behavior
+
+| RPS Range | Target Pods | Behavior |
+|-----------|-------------|----------|
+| 0 – 100   | 2           | Minimum replicas, idle state |
+| 100 – 200 | 4           | Moderate load scale-up |
+| 200 – 300 | 6           | Sustained traffic response |
+| 300+      | 10          | Peak load, ceiling enforced |
+
+Thresholds are tuned to allow gradual, proportional scale-up without over-provisioning at moderate load. KEDA can also scale to **zero replicas** during inactivity — a capability native HPA does not support, making it valuable for cost optimization in staging and non-production environments.
+
+---
+
+## Custom Metrics & Observability
+
+### `/metrics` Endpoint Implementation
+
+Each microservice exposes a `/metrics` endpoint using the Node.js `prom-client` library. A lightweight Express middleware intercepts every incoming request and increments a labeled counter before passing control to the route handler:
+
+```js
+const client = require('prom-client');
+
+const httpRequestsTotal = new client.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests received',
+  labelNames: ['service'],
+});
+
+// Middleware — runs on every request
+app.use((req, res, next) => {
+  httpRequestsTotal.inc({ service: 'user-service' });
+  next();
+});
+
+// Prometheus scrape endpoint
+app.get('/metrics', async (req, res) => {
+  res.set('Content-Type', client.register.contentType);
+  res.end(await client.register.metrics());
+});
+```
+
+### Per-Service Labeling Strategy
+
+Every metric emission is labeled with its originating service name:
+
+```
+http_requests_total{service="auth-service"}
+http_requests_total{service="user-service"}
+http_requests_total{service="post-service"}
+http_requests_total{service="media-service"}
+```
+
+This labeling strategy is critical in a multi-service system for three reasons:
+
+| Reason | Why It Matters |
+|--------|----------------|
+| **Isolation** | Prometheus can query each service independently without aggregation noise |
+| **Per-service scaling** | Each KEDA ScaledObject filters on its own `service` label — no cross-contamination |
+| **Accurate alerting** | Dashboards and alerts reflect individual service load, not cluster-wide averages |
+
+Without labels, all four services merge into a single undifferentiated counter, making per-service autoscaling impossible and observability meaningless.
 
 ---
 
@@ -318,8 +410,9 @@ Each microservice is deployed with the following production-grade configurations
 
 ## Prometheus Monitoring
 
-- Each service exposes runtime metrics at `/metrics` in Prometheus exposition format
+- Each service exposes runtime metrics at `/metrics` using `prom-client`, including the custom `http_requests_total` counter labeled per service
 - `service-monitor.yaml` defines a `ServiceMonitor` custom resource that instructs the Prometheus Operator to scrape each service at regular intervals
+- ServiceMonitors carry `release: monitoring` and `app: <service>` labels to satisfy the Prometheus Operator's `serviceMonitorSelector` — a requirement validated through real debugging
 - Metrics are integrated into the `kube-prometheus-stack` (Prometheus + Alertmanager + Grafana) for dashboards and alerting
 - `adapter-values.yaml` configures the Prometheus Adapter, translating Prometheus query results into Kubernetes custom metrics — available to both HPA and KEDA
 
@@ -340,6 +433,7 @@ The `Jenkinsfile` defines a fully automated, security-integrated pipeline execut
 | Docker Build | Builds the application Docker image |
 | Trivy Image Scan | Scans the final Docker image for HIGH and CRITICAL vulnerabilities |
 | Deploy Container | Runs the container and exposes it on port 3000 |
+
 <img width="1494" height="500" alt="image" src="https://github.com/user-attachments/assets/dc370604-7dbd-45ff-88b0-ec1703766963" />
 
 Dependency check reports are archived as build artifacts after every pipeline run for audit and compliance purposes.
@@ -359,3 +453,15 @@ This project follows a **shift-left security** approach, embedding security cont
 - **Trivy** — Dual-layer scanning at both the filesystem level (pre-build) and Docker image level (post-build) to catch vulnerabilities introduced at any stage
 - **Secrets management** — Each microservice loads configuration from isolated `.env` files; secrets are never committed to source control
 - **Kubernetes security posture** — Resource limits prevent noisy-neighbor issues; liveness and readiness probes ensure only healthy pods serve traffic
+
+---
+
+## Key Engineering Learnings
+
+- **Label consistency is foundational** — A single label casing error (`App` vs `app`) silently broke Prometheus scraping across all services; Kubernetes observability has zero tolerance for label mismatches
+- **Metrics-driven scaling outperforms CPU-based scaling** — Request rate directly represents user-facing load; CPU is a downstream symptom that introduces unnecessary lag into scaling decisions
+- **Prometheus Operator requires explicit label alignment** — `serviceMonitorSelector` on the Prometheus CR must match labels on every ServiceMonitor; this is the most common silent failure point in operator-based Prometheus setups
+- **KEDA abstracts HPA complexity** — Rather than managing HPA objects directly, KEDA dynamically creates and updates them based on ScaledObject configuration, keeping scaling logic declarative and version-controlled
+- **Load testing is validation, not optional** — Autoscaling configs that look correct on paper can fail in practice due to resource misconfigurations, probe timing, or metric scraping delays; real traffic is the only proof
+- **Per-metric labeling is a multi-service requirement** — Without service-level labels on Prometheus counters, per-service KEDA triggers and per-service dashboards cannot be built accurately
+- **Scale-to-zero is a cost discipline** — KEDA's ability to scale to zero replicas during inactivity is architecturally significant; native HPA enforces a minimum of 1 pod, which accumulates cost silently across many services
